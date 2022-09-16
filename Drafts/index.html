@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
+
+<button onclick=RunAssigneButton1()>Run assigne button1</button>
+<button onclick=RunUnassigneButton1()>Run unassigne button1</button>
+<button onclick=ClickButton1()>ClickButton1</button>
+<button onclick=fa()>AddLissners</button>
+<button onclick=fa2()>Report</button>
+<p id='button'>This is a button1.</p>
+<p id='button2'>This is a button2.</p>
+<a href="index.html" onclick="alert('Kliknięto link strony głównej!')">
+  Strona główna
+</a>
+
+<script>
+
+function RunAssigneButton1()
+{
+	var button = document.getElementById('button');
+
+	function eventHandler() {alert('wcisnieto przycisk');}
+	button.onclick = eventHandler;
+}
+
+function RunUnassigneButton1()
+{
+	var button = document.getElementById('button');
+	button.onclick = null;
+}
+
+function ClickButton1()
+{
+	var button = document.getElementById('button');
+	button.onclick();
+	for (const key in button) {
+    if(/^on/.test(key)) {
+        const eventType = key.substr(2);
+        button.addEventListener(eventType, function(){console.log(eventType)});
+    }
+}
+
+}
+var button2 = document.getElementById('button2');
+button2.onclick = function() {alert('wcisnieto przycisk2');};
+
+function reportIn(e){
+    var a = e.lastListenerInfo[e.lastListenerInfo.length-1];
+    console.log(a)
+}
+
+function fa2()
+{
+	var button = document.getElementById('button');
+	reportIn(button);
+}
+
+function fa()
+{
+	var button = document.getElementById('button');
+
+	function firstEventHandler() {
+		alert('pierwsza funkcja obslugujaca zdarzenie');
+	};
+
+	function secondEventHandler() {
+		alert('a to druga funkcja obslugujaca zdarzenie')
+	};
+
+	button.addEventListener('click', firstEventHandler, false);
+	button.addEventListener('click', secondEventHandler, false);
+	button.addEventListener('click', function() {
+		alert('a to funkcja anonimowa');
+	}, false);
+
+}
+
+HTMLAnchorElement.prototype.realAddEventListener = HTMLAnchorElement.prototype.addEventListener;
+
+HTMLAnchorElement.prototype.addEventListener = function(a,b,c){
+    this.realAddEventListener(a,reportIn,c); 
+    this.realAddEventListener(a,b,c); 
+    if(!this.lastListenerInfo){  this.lastListenerInfo = new Array()};
+    this.lastListenerInfo.push({a : a, b : b , c : c});
+};
+
+</script>
+
+
+
+</body>
+</html>
+
+

@@ -21,6 +21,7 @@
         var children_to_remove = [];
         var numberOfBricks = 0;
         var colorChange;
+        var BetterNameDict = new Object();
 
         function init() {
             scene = new THREE.Scene();
@@ -69,6 +70,7 @@
             var brick = new THREE.Group();
             colorChange = getRandomArbitrary(0.6, 1);
             brick.name=name;
+            name = getBetterName(name);
             var color = xmlDoc.getElementsByTagName("Brick")[parseInt(name)].getElementsByTagName("color")[0];
             var blocks = xmlDoc.getElementsByTagName("Brick")[parseInt(name)].getElementsByTagName("Block");
             for (let block of blocks) {
@@ -84,7 +86,7 @@
             }
             numberOfBricks++;
             board.add(brick);
-            console.log(scene);
+            //console.log(scene);
         }
 
         function colorNodeToHex(color){
@@ -106,8 +108,8 @@
 
         function onDeleteLastCube() {
             scene.traverse(function(child){
-                var ran = (scene.children[1].children.length-1).toString();
-                if(child.name == ran){
+                var number = (scene.children[1].children.length-1).toString();
+                if(child.name == (number)){
                     children_to_remove.push(child);
                 }
             });
@@ -135,6 +137,7 @@
             });
             children_to_remove=[];
             numberOfBricks = 0;
+            BetterNameDict = new Object();
         }
 
         function addGrid(){
@@ -165,6 +168,34 @@
             xmlDoc = parser.parseFromString(rawXML,"text/xml");
         }
 
+        function setBetterName()
+        {
+            var count = 0;
+            for (const y of Array(4).keys())
+            {
+                const iterator = document.evaluate("//Brick[./Blocks/Block/positionY[contains(text(),'" + y + "')]]/number", xmlDoc, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+                try {
+                    let thisNode = iterator.iterateNext();
+
+                    while (thisNode) {
+                        if(!Object.values(BetterNameDict).includes(thisNode.textContent))
+                        {
+                            BetterNameDict[count] = thisNode.textContent;
+                            count++;
+                        }
+                        thisNode = iterator.iterateNext();
+                    }
+                }
+                catch(e) {
+                    console.error(`Error: Document tree modified during iteration ${e}`);
+                }
+            }
+        }
+        function getBetterName(name)
+        {
+            return BetterNameDict[name];
+        }
+
         function readSingleFile(e) {
             var file = e.target.files[0];
             if (!file) {
@@ -177,6 +208,7 @@
                 rawXML = e.target.result;
                 document.querySelector("#file-contents").textContent = rawXML;
                 parseXML();
+                setBetterName();
             });
             reader.readAsText(file);
         }
@@ -187,16 +219,16 @@
 
         window.addEventListener('resize', onWindowResize);
         window.addEventListener('contextmenu', onDeleteLastCube);
-        window.addEventListener('click', onAddCube);
+        window.addEventListener('dblclick', onAddCube);
         window.addEventListener('input', onLoadFile);
         window.onload = init;
     </script>
 </head>
 <body>
-<h1></h1>
+<button onclick="var event = new MouseEvent('dblclick', {'view': window,'bubbles': true,'cancelable': true });document.getElementById('aa').dispatchEvent(event);">Add brick</button>
+<button onclick="var event = new MouseEvent('contextmenu', {'view': window,'bubbles': true,'cancelable': true });document.getElementById('aa').dispatchEvent(event);">Remove last brick</button>
 <p style="display: none;" id="file-contents"></p>
-<input type="file"
-                id="avatar" name="avatar"
-                accept=".txt">
+<h1 id="aa" ></h1>
+<input type="file" accept=".txt">
 </body>
 </html>

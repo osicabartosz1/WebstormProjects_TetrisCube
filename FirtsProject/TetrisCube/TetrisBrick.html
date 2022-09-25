@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Three.js Tetris Cube</title>
+    <style> * {margin: 0;padding: 0;}</style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
+                "OrbitControls": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js"
+            }
+        }
+    </script>
+    <script type="module" >
+        import * as THREE from 'https://unpkg.com/three/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three/examples/jsm/controls/OrbitControls.js';
+
+        var scene, camera, renderer, controls, board;
+        var rawXML, xmlDoc;
+        var children_to_remove = [];
+        var numberOfBricks = -1;
+        var BetterNameDict = new Object();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color( 0x999999 );
+            addGrid();
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 3;
+            camera.position.z = 9;
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            document.body.appendChild(renderer.domElement);
+
+            addEmptyBoard();
+            if(rawXML != null) AddingBrick(0);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0);
+            controls.enablePan = false;
+            controls.enableDamping = true;
+
+            window.requestAnimationFrame(animate);
+        }
+
+        function animate() {
+            controls.update();
+            try {
+                document.getElementsByTagName("h1").item(0).innerText="Number of elements = " + numberOfBricks.toString();
+            } catch (error) {
+                console.error(error);
+            }
+            renderer.render(scene, camera);
+            window.requestAnimationFrame(animate);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+
+        function AddingBrick(name){
+            let cube;
+            var brick = new THREE.Group();
+            brick.name=name;
+            var blocks = xmlDoc.getElementsByTagName("ArrayOfBlock")[parseInt(name)].getElementsByTagName("Block");
+            for (let block of blocks) {
+                cube = new THREE.BoxGeometry(1, 1, 1);
+                var Material = new THREE.MeshPhongMaterial({color: '#FFFFFF'});
+                cube = new THREE.Mesh(cube, Material);
+                cube.name = name.toString();
+                cube.position.set(
+                    block.getElementsByTagName("positionX")[0].textContent - 1.5,
+                    block.getElementsByTagName("positionY")[0].textContent - 1.5,
+                    block.getElementsByTagName("positionZ")[0].textContent - 1.5);
+                brick.add(cube);
+            }
+            board.add(brick);
+            //console.log(scene);
+        }
+
+        function onAddCube() {
+            AddingBrick(numberOfBricks);
+        }
+
+        function onDeleteLastCube() {
+            scene.traverse(function(child){
+                var number = numberOfBricks.toString();
+                if(child.name == (number)){
+                    children_to_remove.push(child);
+                }
+            });
+            children_to_remove.forEach(function(child){
+                scene.children[1].remove(child);
+            });
+            children_to_remove=[];
+        }
+
+        function onLoadFile(e) {
+            readSingleFile(e);
+            clearScene();
+            addGrid();
+            addEmptyBoard();
+            addLight();
+        }
+
+        function clearScene(){
+            scene.traverse(function(child){
+                    children_to_remove.push(child);
+            });
+            children_to_remove.forEach(function(child){
+                scene.remove(child);
+            });
+            children_to_remove=[];
+            numberOfBricks = 0;
+            BetterNameDict = new Object();
+        }
+
+        function addGrid(){
+            var grid = new THREE.GridHelper( 50, 50, 0xffffff, 0x333333 );
+            scene.add( grid );
+        }
+
+        function addLight(){
+            var light = new THREE.PointLight(0xffffff, 2);
+            light.position.set(-40,-20,20);
+            scene.add(light);
+            var light2 = new THREE.PointLight(0xffffff, 2);
+            light2.position.set(40,20,-20);
+            scene.add(light2);
+            var light3 = new THREE.PointLight(0xffffff, 2);
+            light3.position.set(40,-20,-20);
+            scene.add(light3);
+        }
+
+        function addEmptyBoard(){
+            board = new THREE.Group();
+            board.name = "Board";
+            scene.add(board);
+        }
+
+        function parseXML(){
+            var parser = new DOMParser();
+            xmlDoc = parser.parseFromString(rawXML,"text/xml");
+        }
+
+        function readSingleFile(e) {
+            var file = e.target.files[0];
+            if (!file) {
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function(e) {
+            };
+            reader.addEventListener('load', function(e) {
+                rawXML = e.target.result;
+                document.querySelector("#file-contents").textContent = rawXML;
+                parseXML();
+            });
+            reader.readAsText(file);
+        }
+
+
+        function ShowNextBrick()
+        {
+            onDeleteLastCube();
+            numberOfBricks++;
+            onAddCube();
+
+        }
+        function ShowPerviousBrick()
+        {
+            onDeleteLastCube();
+            numberOfBricks--;
+            onAddCube();
+        }
+
+        window.addEventListener('resize', onWindowResize);
+        window.addEventListener('contextmenu', ShowPerviousBrick);
+        window.addEventListener('dblclick', ShowNextBrick);
+        window.addEventListener('input', onLoadFile);
+        window.onload = init;
+    </script>
+</head>
+<body>
+<button onclick="var event = new MouseEvent('dblclick', {'view': window,'bubbles': true,'cancelable': true });document.getElementById('aa').dispatchEvent(event);">Show next brick</button>
+<button onclick="var event = new MouseEvent('contextmenu', {'view': window,'bubbles': true,'cancelable': true });document.getElementById('aa').dispatchEvent(event);">Show pervious brick</button>
+<p style="display: none;" id="file-contents"></p>
+<h1 id="aa" ></h1>
+<input type="file" accept=".txt">
+</body>
+</html>

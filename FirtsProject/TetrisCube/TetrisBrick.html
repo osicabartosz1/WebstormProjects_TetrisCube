@@ -68,7 +68,7 @@
             let cube;
             var brick = new THREE.Group();
             brick.name=name;
-            var blocks = xmlDoc.getElementsByTagName("ArrayOfBlock")[parseInt(name)].getElementsByTagName("Block");
+            var blocks = xmlDoc.getElementsByTagName("Position")[parseInt(name)].getElementsByTagName("Block");
             for (let block of blocks) {
                 cube = new THREE.BoxGeometry(1, 1, 1);
                 var Material = new THREE.MeshPhongMaterial({color: '#FFFFFF'});
